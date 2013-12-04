@@ -4,13 +4,13 @@
  * and open the template in the editor.
  */
 
-package simulateur;
+package linkStateRouting;
 
 /**
  *
  * @author alo
  */
-public class Simulateur {
+public class Demo {
 
     /**
      * @param args the command line arguments
