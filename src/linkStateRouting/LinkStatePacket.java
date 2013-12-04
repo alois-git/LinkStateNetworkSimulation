@@ -5,9 +5,6 @@
  */
 package linkStateRouting;
 
-import java.util.ArrayList;
-import java.util.List;
-import reso.common.Message;
 import reso.ip.IPAddress;
 import reso.ip.IPInterfaceAdapter;
 
@@ -17,33 +14,13 @@ import reso.ip.IPInterfaceAdapter;
  */
 public class LinkStatePacket {
 
-    public class Neighbor {
-
-        public int id;
-        public int cost;
-    }
-
     public final IPAddress dst;
-    public final int routerId;
-    public final int sequenceNumber;
-    public final int neighborsNumber;
-    public final List<Neighbor> neighbors;
+    public final int metric;
     public final IPInterfaceAdapter oif;
 
-    public LinkStatePacket(IPAddress dst, int id, int sequence, ArrayList<Neighbor> neighbors, IPInterfaceAdapter oif) {
+    public LinkStatePacket(IPAddress dst, int metric,  IPInterfaceAdapter oif) {
         this.oif = oif;
         this.dst = dst;
-        this.routerId = id;
-        this.sequenceNumber = sequence;
-        this.neighbors = neighbors;
-        this.neighborsNumber = neighbors.size();
-    }
-
-    public String toString() {
-        String s = "";
-        for (Neighbor nb : neighbors) {
-            s += " " + nb;
-        }
-        return s;
+        this.metric = metric;
     }
 }

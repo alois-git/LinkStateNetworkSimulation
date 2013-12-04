@@ -7,6 +7,7 @@ package linkStateRouting;
 
 import java.util.ArrayList;
 import java.util.List;
+import reso.common.Message;
 import reso.ip.IPAddress;
 import reso.ip.IPInterfaceAdapter;
 
@@ -14,16 +15,26 @@ import reso.ip.IPInterfaceAdapter;
  *
  * @author alo
  */
-public class LinkStateMessage {
+public class LinkStateMessage implements Message{
 
-    public static List<LinkStatePacket> packets;
+    public List<LinkStatePacket> packets;
+    public static int sequence = 0;
+
+    public int getSequence() {
+        return sequence;
+    }
+
+    public List<LinkStatePacket> getPackets() {
+        return packets;
+    }
 
     public LinkStateMessage() {
         packets = new ArrayList<LinkStatePacket>();
+        sequence++;
     }
 
-    public void addLS(IPAddress dst, int routerId, int sequence,ArrayList<LinkStatePacket.Neighbor> neighbors,IPInterfaceAdapter oif) {
-        packets.add(new LinkStatePacket(dst, routerId, sequence,neighbors,oif));
+    public void addLS(IPAddress dst, int metric, IPInterfaceAdapter oif) {
+        packets.add(new LinkStatePacket(dst, metric, oif));
     }
 
     public String toString() {
