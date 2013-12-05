@@ -15,11 +15,16 @@ import reso.ip.IPRouteEntry;
  */
 public class LinkStateRoutingEntry extends IPRouteEntry {
 
-    public LinkStatePacket packet;
+    public LinkState ls;
 
-    public LinkStateRoutingEntry(IPAddress dst, IPInterfaceAdapter oif, LinkStatePacket packet) {
+    public LinkStateRoutingEntry(IPAddress dst, IPInterfaceAdapter oif, LinkState packet) {
         super(dst, oif, LinkStateRoutingProtocol.PROTOCOL_NAME);
-        this.packet = packet;
+        this.ls = packet;
     }
 
+    public String toString() {
+        String s = super.toString();
+        s += ", metric=" + ls.metric;
+        return s;
+    }
 }

@@ -12,15 +12,19 @@ import reso.ip.IPInterfaceAdapter;
  *
  * @author alo
  */
-public class LinkStatePacket {
+public class LinkState {
 
     public final IPAddress dst;
     public final int metric;
     public final IPInterfaceAdapter oif;
 
-    public LinkStatePacket(IPAddress dst, int metric,  IPInterfaceAdapter oif) {
+    public LinkState(IPAddress dst, int metric, IPInterfaceAdapter oif) {
         this.oif = oif;
         this.dst = dst;
         this.metric = metric;
+    }
+
+    public String toString() {
+        return "LS[" + dst + "," + ((metric == Integer.MAX_VALUE) ? "inf" : metric) + "," + oif + "]";
     }
 }

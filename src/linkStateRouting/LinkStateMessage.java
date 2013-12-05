@@ -15,31 +15,31 @@ import reso.ip.IPInterfaceAdapter;
  *
  * @author alo
  */
-public class LinkStateMessage implements Message{
+public class LinkStateMessage implements Message {
 
-    public List<LinkStatePacket> packets;
+    public List<LinkState> linkStates;
     public static int sequence = 0;
 
     public int getSequence() {
         return sequence;
     }
 
-    public List<LinkStatePacket> getPackets() {
-        return packets;
+    public List<LinkState> getLinkStates() {
+        return linkStates;
     }
 
     public LinkStateMessage() {
-        packets = new ArrayList<LinkStatePacket>();
+        linkStates = new ArrayList<LinkState>();
         sequence++;
     }
 
     public void addLS(IPAddress dst, int metric, IPInterfaceAdapter oif) {
-        packets.add(new LinkStatePacket(dst, metric, oif));
+        linkStates.add(new LinkState(dst, metric, oif));
     }
 
     public String toString() {
         String s = "";
-        for (LinkStatePacket packet : packets) {
+        for (LinkState packet : linkStates) {
             s += " " + packet;
         }
         return s;

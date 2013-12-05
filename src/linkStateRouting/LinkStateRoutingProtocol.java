@@ -8,7 +8,6 @@ package linkStateRouting;
 import static dijkstra.Dijkstra.getShortestPathTo;
 import dijkstra.Edge;
 import dijkstra.Vertex;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,22 +82,36 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     @Override
     public void receive(IPInterfaceAdapter src, Datagram datagram) throws Exception {
-        System.out.println(getRouterID() + "received from :"+src.getAddress().toString());
+
         LinkStateMessage msg = (LinkStateMessage) datagram.getPayload();
-        // check if the sequence number is bigger than the one actually stored.
+
+        // Check if it is not present or if sequence number is bigger than the one actually stored.
         if (LSDB.get(src.getAddress()) == null || msg.getSequence() > LSDB.get(src.getAddress()).getSequence()) {
             LSDB.put(src.getAddress(), msg);
-//            for (LinkStatePacket packet : msg.getPackets()) {
-//                ip.addRoute(new LinkStateRoutingEntry(packet.dst, packet.oif, packet));
-//            }
+            // browse every link from a neibourg
+            for (LinkState ls : msg.getLinkStates()) {
+                if (ip.hasAddress(ls.dst)) {
+                    continue;
+                }
+                LinkState newLS = new LinkState(ls.dst, addMetric(ls.metric, src.getMetric()), src);
+                ip.addRoute(new LinkStateRoutingEntry(newLS.dst, newLS.oif, newLS));
+            }
             this.SendToAllButSender(src, msg);
         }
         Compute(LSDB);
+
+    }
+
+    public int addMetric(int m1, int m2) {
+        if (((long) m1) + ((long) m2) > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return m1 + m2;
     }
 
     private void SendToAllButSender(IPInterfaceAdapter src, LinkStateMessage msg) throws Exception {
         for (IPInterfaceAdapter iface : ip.getInterfaces()) {
-            if (iface.getAddress().equals(src.getAddress()) || iface instanceof IPLoopbackAdapter) {
+            if (iface.equals(src) || iface instanceof IPLoopbackAdapter) {
                 continue;
             }
             Datagram newDatagram = new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, msg);
@@ -106,16 +119,17 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         }
     }
 
-    private void Compute(Map<IPAddress, LinkStateMessage> LSDB) {
+    private void Compute(Map<IPAddress, LinkStateMessage> LSDB) throws Exception {
         HashMap<IPAddress, Vertex> vertices = new HashMap<IPAddress, Vertex>();
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
             Vertex newVertex = new Vertex(entry.getKey().toString());
-            for (LinkStatePacket packet : entry.getValue().getPackets()) {
+            for (LinkState packet : entry.getValue().getLinkStates()) {
                 Vertex v = vertices.get(packet.dst);
                 if (v == null) {
                     v = new Vertex(packet.dst.toString());
                 }
                 newVertex.addEdge(new Edge(v, packet.metric));
+
             }
             vertices.put(entry.getKey(), newVertex);
         }
@@ -123,6 +137,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         for (Vertex v : vertices.values()) {
             //System.out.println("Distance to " + v + ": " + v.minDistance);
             List<Vertex> path = getShortestPathTo(v);
+
             //System.out.println("Path: " + path);
         }
     }
