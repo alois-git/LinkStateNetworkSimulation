@@ -20,9 +20,11 @@ public class LinkStateMessage implements Message {
     public IPAddress routerId;
     public List<LinkState> linkStates;
     public static int sequence = 0;
-    
-    public LinkStateMessage(IPAddress routerId){
+
+    public LinkStateMessage(IPAddress routerId) {
         this.routerId = routerId;
+        linkStates = new ArrayList<LinkState>();
+        sequence++;
     }
 
     public int getSequence() {
@@ -38,8 +40,8 @@ public class LinkStateMessage implements Message {
         sequence++;
     }
 
-    public void addLS(IPAddress routerId, int metric, IPInterfaceAdapter oif) {
-        linkStates.add(new LinkState(routerId, metric, oif));
+    public void addLS(IPAddress routerId, int metric) {
+        linkStates.add(new LinkState(routerId, metric));
     }
 
     public String toString() {

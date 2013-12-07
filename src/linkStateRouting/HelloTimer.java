@@ -6,13 +6,10 @@
 
 package linkStateRouting;
 
-import reso.ip.IPAddress;
-
 /**
  *
  * @author alo
  */
-public class Neighbor {
-
-    public IPAddress routerIp;
+public class HelloTimer {
+    
 }

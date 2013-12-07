@@ -5,7 +5,10 @@
  */
 package linkStateRouting;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import reso.common.Message;
 import reso.ip.IPAddress;
 
@@ -19,9 +22,9 @@ public class HelloMessage implements Message {
     public final List<IPAddress> neighborList;
     public final int neighborNumber;
 
-    public HelloMessage(IPAddress routerId, List<IPAddress> neighborList) {
+    public HelloMessage(IPAddress routerId, Set<IPAddress> keySet) {
         this.routerId = routerId;
-        this.neighborList = neighborList;
-        this.neighborNumber = neighborList.size();
+        this.neighborList = new ArrayList<IPAddress>(keySet);
+        this.neighborNumber = this.neighborList.size();
     }
 }

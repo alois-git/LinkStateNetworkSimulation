@@ -44,11 +44,11 @@ public class Demo {
         return routerID;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         String filename = Demo.class.getClassLoader().getResource(TOPO_FILE).getFile();
 
         AbstractScheduler scheduler = new Scheduler();
-        try {
+       
             Network network = NetworkBuilder.loadTopology(filename, scheduler);
 
             // Add routing protocol application to each router
@@ -59,7 +59,7 @@ public class Demo {
                 IPRouter router = (IPRouter) n;
                 boolean advertise = true;
                 //boolean advertise= (n.name.equals("R4"));
-                router.addApplication(new LinkStateRoutingProtocol(router,4));
+                router.addApplication(new LinkStateRoutingProtocol(router,4,4));
                 router.start();
             }
 
@@ -79,20 +79,9 @@ public class Demo {
                 w.close();
             }
 
-            ((IPHost) network.getNodeByName("R3")).getIPLayer().getInterfaceByName("eth0").setMetric(200);
-            ((IPHost) network.getNodeByName("R3")).getIPLayer().getInterfaceByName("eth0").down();
-            ((IPHost) network.getNodeByName("R3")).getIPLayer().getInterfaceByName("eth0").up();
-            network.getNodeByName("R3").getInterfaceByName("eth0").down();
-            network.getNodeByName("R3").getInterfaceByName("eth0").up();
-            System.out.println(scheduler.getCurrentTime());
-
             // Display forwarding table for each node
             FIBDumper.dumpForAllRouters(network);
 
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-            e.printStackTrace(System.err);
-        }
     }
 
 }
