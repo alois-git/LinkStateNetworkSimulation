@@ -14,17 +14,17 @@ import reso.ip.IPInterfaceAdapter;
  */
 public class LinkState {
 
-    public final IPAddress dst;
+    public final IPAddress routerId;
     public final int metric;
     public final IPInterfaceAdapter oif;
 
     public LinkState(IPAddress dst, int metric, IPInterfaceAdapter oif) {
         this.oif = oif;
-        this.dst = dst;
+        this.routerId = dst;
         this.metric = metric;
     }
 
     public String toString() {
-        return "LS[" + dst + "," + ((metric == Integer.MAX_VALUE) ? "inf" : metric) + "," + oif + "]";
+        return "LS[" + routerId + "," + ((metric == Integer.MAX_VALUE) ? "inf" : metric) + "," + oif + "]";
     }
 }

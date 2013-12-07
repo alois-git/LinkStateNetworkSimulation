@@ -29,7 +29,7 @@ import reso.utilities.NetworkGrapher;
  */
 public class Demo {
 
-    public static final String TOPO_FILE = "reso/data/topology.txt";
+    public static final String TOPO_FILE = "reso/data/topology2.txt";
 
     private static IPAddress getRouterID(IPLayer ip) {
         IPAddress routerID = null;
@@ -59,7 +59,7 @@ public class Demo {
                 IPRouter router = (IPRouter) n;
                 boolean advertise = true;
                 //boolean advertise= (n.name.equals("R4"));
-                router.addApplication(new LinkStateRoutingProtocol(router));
+                router.addApplication(new LinkStateRoutingProtocol(router,4));
                 router.start();
             }
 

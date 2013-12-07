@@ -8,10 +8,12 @@ package linkStateRouting;
 import static dijkstra.Dijkstra.getShortestPathTo;
 import dijkstra.Edge;
 import dijkstra.Vertex;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import reso.common.AbstractApplication;
+import reso.common.AbstractTimer;
 import reso.common.Interface;
 import reso.common.InterfaceAttrListener;
 import reso.ip.Datagram;
@@ -31,14 +33,19 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     public static final String PROTOCOL_NAME = "LS_ROUTING";
     public static final int IP_PROTO_LS = Datagram.allocateProtocolNumber(PROTOCOL_NAME);
+    public int HelloDelay;
 
-    public Map<IPAddress, LinkStateMessage> LSDB;
+    public final Map<IPAddress, LinkStateMessage> LSDB;
+    // neibourgs table
+    public final List<IPAddress> neighborList;
     private final IPLayer ip;
 
-    public LinkStateRoutingProtocol(IPRouter router) {
+    public LinkStateRoutingProtocol(IPRouter router, int helloDelay) {
         super(router, PROTOCOL_NAME);
         this.ip = router.getIPLayer();
         this.LSDB = new HashMap<IPAddress, LinkStateMessage>();
+        this.neighborList = new ArrayList<>();
+        this.HelloDelay = helloDelay;
     }
 
     @Override
@@ -51,25 +58,14 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             iface.addAttrListener(this);
         }
 
-        // building the link state message containing all the neighbours
-        LinkStateMessage dvm = new LinkStateMessage();
+        // saying hello to all his neighbours
         for (IPInterfaceAdapter iface : ip.getInterfaces()) {
             if (iface instanceof IPLoopbackAdapter) {
                 continue;
             }
-            dvm.addLS(iface.getAddress(), iface.getMetric(), iface);
+            HelloMessage hello = new HelloMessage(getRouterID(), neighborList);
+            iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, hello), null);
         }
-        // init LSDB with own information
-        LSDB.put(this.getRouterID(), dvm);
-
-        // sending the state message to each neighbours.
-        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
-            if (iface instanceof IPLoopbackAdapter) {
-                continue;
-            }
-            iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, dvm), null);
-        }
-
     }
 
     @Override
@@ -83,22 +79,51 @@ public class LinkStateRoutingProtocol extends AbstractApplication
     @Override
     public void receive(IPInterfaceAdapter src, Datagram datagram) throws Exception {
 
-        LinkStateMessage msg = (LinkStateMessage) datagram.getPayload();
+        // hello message received from one of our neibourg
+        if (datagram.getPayload() instanceof HelloMessage) {
+            HelloMessage hello = (HelloMessage) datagram.getPayload();
 
-        // Check if it is not present or if sequence number is bigger than the one actually stored.
-        if (LSDB.get(src.getAddress()) == null || msg.getSequence() > LSDB.get(src.getAddress()).getSequence()) {
-            LSDB.put(src.getAddress(), msg);
-            // browse every link from a neibourg
-            for (LinkState ls : msg.getLinkStates()) {
-                if (ip.hasAddress(ls.dst)) {
-                    continue;
+            if (!neighborList.contains(hello.routerId)) {
+
+                // if the sender has to router id in his neighbor list add him has a neighbor
+                // we had it permanently to our neighbor list.
+                if (hello.neighborList.contains(getRouterID())) {
+                    neighborList.add(hello.routerId);
+                } else {
+                    List<IPAddress> OSPFTemp = neighborList;
+                    OSPFTemp.add(hello.routerId);
+                    HelloMessage helloAnswer = new HelloMessage(getRouterID(), OSPFTemp);
+                    src.send(new Datagram(src.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, helloAnswer), null);
                 }
-                LinkState newLS = new LinkState(ls.dst, addMetric(ls.metric, src.getMetric()), src);
-                ip.addRoute(new LinkStateRoutingEntry(newLS.dst, newLS.oif, newLS));
+
             }
-            this.SendToAllButSender(src, msg);
+
         }
-        Compute(LSDB);
+        System.out.println("Neighbor of :" + getRouterID());
+        for (IPAddress routerId : neighborList) {
+            System.out.println(routerId);
+        }
+        System.out.println("-------------------------");
+
+        // LinkState message
+        if (datagram.getPayload() instanceof LinkStateMessage) {
+            LinkStateMessage msg = (LinkStateMessage) datagram.getPayload();
+
+            // Check if it is not present or if sequence number is bigger than the one actually stored.
+            if (LSDB.get(src.getAddress()) == null || msg.getSequence() > LSDB.get(src.getAddress()).getSequence()) {
+                LSDB.put(src.getAddress(), msg);
+                // browse every link from a neibourg
+                for (LinkState ls : msg.getLinkStates()) {
+                    if (ip.hasAddress(ls.routerId)) {
+                        continue;
+                    }
+                    LinkState newLS = new LinkState(ls.routerId, addMetric(ls.metric, src.getMetric()), src);
+                    ip.addRoute(new LinkStateRoutingEntry(newLS.routerId, newLS.oif, newLS));
+                }
+                this.SendToAllButSender(src, msg);
+            }
+            Compute(LSDB);
+        }
 
     }
 
@@ -124,9 +149,9 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
             Vertex newVertex = new Vertex(entry.getKey().toString());
             for (LinkState packet : entry.getValue().getLinkStates()) {
-                Vertex v = vertices.get(packet.dst);
+                Vertex v = vertices.get(packet.routerId);
                 if (v == null) {
-                    v = new Vertex(packet.dst.toString());
+                    v = new Vertex(packet.routerId.toString());
                 }
                 newVertex.addEdge(new Edge(v, packet.metric));
 
@@ -160,4 +185,5 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         }
         return routerID;
     }
+
 }
