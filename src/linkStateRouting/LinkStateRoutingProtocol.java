@@ -37,9 +37,13 @@ public class LinkStateRoutingProtocol extends AbstractApplication
     public int HelloDelay;
     public int LSPDelay;
 
+    // routing table
     public final Map<IPAddress, LinkStateMessage> LSDB;
+    // forwarding table;
+    public final Map<IPAddress,IPInterfaceAdapter> FIB;
     // neibourgs table
     public final Map<IPAddress, Integer> neighborList;
+    
     private final IPLayer ip;
     private AbstractTimer LSDBTimer;
 
@@ -47,6 +51,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         super(router, PROTOCOL_NAME);
         this.ip = router.getIPLayer();
         this.LSDB = new HashMap<IPAddress, LinkStateMessage>();
+        this.FIB = new HashMap<IPAddress, IPInterfaceAdapter>();
         this.neighborList = new HashMap<IPAddress, Integer>();
         this.HelloDelay = helloDelay;
         this.LSPDelay = lspDelay;
