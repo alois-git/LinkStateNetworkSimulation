@@ -5,11 +5,11 @@
  */
 package dijkstra;
 
-public class Vertex {
+public class Node {
 
     final private String id;
 
-    public Vertex(String id) {
+    public Node(String id) {
         this.id = id;
     }
 
@@ -36,7 +36,7 @@ public class Vertex {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        Vertex other = (Vertex) obj;
+        Node other = (Node) obj;
         if (id == null) {
             if (other.id != null) {
                 return false;

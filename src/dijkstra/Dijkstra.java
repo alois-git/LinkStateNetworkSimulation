@@ -25,49 +25,53 @@ import java.util.Set;
 
 public class Dijkstra {
 
-    private final List<Vertex> nodes;
+    // N
+    private final List<Node> nodes;
     private final List<Edge> edges;
-    private Set<Vertex> settledNodes;
-    private Set<Vertex> unSettledNodes;
-    private Map<Vertex, Vertex> predecessors;
-    private Map<Vertex, Integer> distance;
+
+    private Set<Node> TreatedNodes = new HashSet<Node>();
+    // N'
+    private Set<Node> NotTreatedNodes;
+    // p(v)
+    private Map<Node, Node> predecessors;
+    // D(v)
+    private Map<Node, Integer> distances;
 
     public Dijkstra(Graph graph) {
         // create a copy of the array so that we can operate on this array
-        this.nodes = new ArrayList<Vertex>(graph.getVertexes());
+        this.nodes = new ArrayList<Node>(graph.getVertexes());
         this.edges = new ArrayList<Edge>(graph.getEdges());
     }
 
-    public void execute(Vertex source) {
-        settledNodes = new HashSet<Vertex>();
-        unSettledNodes = new HashSet<Vertex>();
-        distance = new HashMap<Vertex, Integer>();
-        predecessors = new HashMap<Vertex, Vertex>();
-        distance.put(source, 0);
-        unSettledNodes.add(source);
-        while (unSettledNodes.size() > 0) {
-            Vertex node = getMinimum(unSettledNodes);
-            settledNodes.add(node);
-            unSettledNodes.remove(node);
-            findMinimalDistances(node);
+    public void calculate(Node source) {
+        NotTreatedNodes = new HashSet<Node>();
+        distances = new HashMap<Node, Integer>();
+        predecessors = new HashMap<Node, Node>();
+        // set infinity to all other node than myself
+        for (Node entry : distances.keySet()) {
+            distances.put(entry, Integer.MAX_VALUE);
+        }
+        distances.put(source, 0);
+        NotTreatedNodes.add(source);
+        // tant que N' != V
+        while (NotTreatedNodes.size() > 0) {
+            // find u not in N' such that D(u) is minimum
+            Node u = getClosestNode(NotTreatedNodes);
+            TreatedNodes.add(u);
+            NotTreatedNodes.remove(u);
+            // for each v adjacent to u
+            findMinimalDistances(u);
         }
     }
 
-    private void findMinimalDistances(Vertex node) {
-        List<Vertex> adjacentNodes = getNeighbors(node);
-        for (Vertex target : adjacentNodes) {
-            if (getShortestDistance(target) > getShortestDistance(node)
-                    + getDistance(node, target)) {
-                distance.put(target, getShortestDistance(node)
-                        + getDistance(node, target));
-                predecessors.put(target, node);
-                unSettledNodes.add(target);
-            }
-        }
-
-    }
-
-    private int getDistance(Vertex node, Vertex target) {
+    /**
+     * Return the distance between two node
+     *
+     * @param node
+     * @param target
+     * @return
+     */
+    private int getDistance(Node node, Node target) {
         for (Edge edge : edges) {
             if (edge.getSource().equals(node)
                     && edge.getDestination().equals(target)) {
@@ -77,20 +81,31 @@ public class Dijkstra {
         throw new RuntimeException("Should not happen");
     }
 
-    private List<Vertex> getNeighbors(Vertex node) {
-        List<Vertex> neighbors = new ArrayList<Vertex>();
-        for (Edge edge : edges) {
-            if (edge.getSource().equals(node)
-                    && !isSettled(edge.getDestination())) {
+    /**
+     * Return a list of node neighbors to a source node
+     *
+     * @param node
+     * @return
+     */
+    private List<Node> getNeighbors(Node node) {
+        ArrayList<Node> neighbors = new ArrayList<Node>();
+        for (Edge edge : this.edges) {
+            if (node.equals(edge.getSource()) && !isTreated(edge.getDestination())) {
                 neighbors.add(edge.getDestination());
             }
         }
         return neighbors;
     }
 
-    private Vertex getMinimum(Set<Vertex> vertexes) {
-        Vertex minimum = null;
-        for (Vertex vertex : vertexes) {
+    /**
+     * Return the closest node from source
+     *
+     * @param vertexes
+     * @return
+     */
+    private Node getClosestNode(Set<Node> vertexes) {
+        Node minimum = null;
+        for (Node vertex : vertexes) {
             if (minimum == null) {
                 minimum = vertex;
             } else {
@@ -102,12 +117,41 @@ public class Dijkstra {
         return minimum;
     }
 
-    private boolean isSettled(Vertex vertex) {
-        return settledNodes.contains(vertex);
+    /**
+     * Updates the distances between the source and the not treated node
+     * (neighbors)
+     *
+     * @param node
+     */
+    void findMinimalDistances(Node node) {
+        List<Node> adjacentNodes = getNeighbors(node);
+        for (Node target : adjacentNodes) {
+            if (getShortestDistance(target) > getShortestDistance(node) + getDistance(node, target)) {
+                distances.put(target, getShortestDistance(node) + getDistance(node, target));
+                predecessors.put(target, node);
+                NotTreatedNodes.add(target);
+            }
+        }
     }
 
-    private int getShortestDistance(Vertex destination) {
-        Integer d = distance.get(destination);
+    /**
+     * Checks if a node is already processed
+     *
+     * @param node
+     * @return
+     */
+    boolean isTreated(Node node) {
+        return TreatedNodes.contains(node);
+    }
+
+    /**
+     * Return the shortest distance to a specific node
+     *
+     * @param destination
+     * @return
+     */
+    private int getShortestDistance(Node destination) {
+        Integer d = distances.get(destination);
         if (d == null) {
             return Integer.MAX_VALUE;
         } else {
@@ -115,13 +159,15 @@ public class Dijkstra {
         }
     }
 
-    /*
-     * This method returns the path from the source to the selected target and
-     * NULL if no path exists
+    /**
+     * Return the path to a specific node
+     *
+     * @param target
+     * @return
      */
-    public LinkedList<Vertex> getPath(Vertex target) {
-        LinkedList<Vertex> path = new LinkedList<Vertex>();
-        Vertex step = target;
+    public LinkedList<Node> getPath(Node target) {
+        LinkedList<Node> path = new LinkedList<Node>();
+        Node step = target;
         // check if a path exists
         if (predecessors.get(step) == null) {
             return null;
@@ -134,6 +180,16 @@ public class Dijkstra {
         // Put it into the correct order
         Collections.reverse(path);
         return path;
+    }
+
+    /**
+     * Return the total cost of a path
+     *
+     * @param path
+     * @return
+     */
+    public int getDistanceOfPath(List<Node> path) {
+        return getShortestDistance(path.get(path.size() - 1));
     }
 
 }

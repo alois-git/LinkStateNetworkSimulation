@@ -8,7 +8,7 @@ package linkStateRouting;
 import dijkstra.Dijkstra;
 import dijkstra.Edge;
 import dijkstra.Graph;
-import dijkstra.Vertex;
+import dijkstra.Node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -40,10 +40,10 @@ public class LinkStateRoutingProtocol extends AbstractApplication
     // routing table
     public final Map<IPAddress, LinkStateMessage> LSDB;
     // forwarding table;
-    public final Map<IPAddress,IPInterfaceAdapter> FIB;
+    public final Map<IPAddress, IPInterfaceAdapter> FIB;
     // neibourgs table
     public final Map<IPAddress, Integer> neighborList;
-    
+
     private final IPLayer ip;
     private AbstractTimer LSDBTimer;
 
@@ -123,20 +123,21 @@ public class LinkStateRoutingProtocol extends AbstractApplication
                 LSDB.put(msg.routerId, msg);
                 this.SendToAllButSender(src, msg);
             }
+            Compute(LSDB);
         }
+//
+//        System.out.println("LSDB of :" + getRouterID());
+//        for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
+//
+//            System.out.print("LSP: " + entry.getValue().routerId + ",Seq " + entry.getValue().sequence + ", Nb " + entry.getValue().linkStates.size());
+//            System.out.println("");
+//            for (LinkState ls : entry.getValue().linkStates) {
+//                System.out.println("[" + ls.routerId + ":" + ls.metric + "]");
+//            }
+//        }
+//        System.out.println("");
+//        System.out.println("---------------------------");
 
-        System.out.println("LSDB of :" + getRouterID());
-        for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
-
-            System.out.print("LSP: " + entry.getValue().routerId + ",Seq " + entry.getValue().sequence + ", Nb " + entry.getValue().linkStates.size());
-            System.out.println("");
-            for (LinkState ls : entry.getValue().linkStates) {
-                System.out.println("[" + ls.routerId + ":" + ls.metric + "]");
-            }
-        }
-        System.out.println("");
-        System.out.println("---------------------------");
-        Compute(LSDB);
     }
 
     public void SendLSP() throws Exception {
@@ -179,30 +180,55 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     private void Compute(Map<IPAddress, LinkStateMessage> LSDB) throws Exception {
 
-        HashMap<IPAddress, Vertex> vertices = new HashMap<IPAddress, Vertex>();
+        HashMap<IPAddress, Node> vertices = new HashMap<IPAddress, Node>();
         ArrayList<Edge> edges = new ArrayList<Edge>();
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
-            Vertex newVertex = new Vertex(entry.getKey().toString());
-            vertices.put(entry.getKey(), newVertex);
+            for (LinkState packet : entry.getValue().getLinkStates()) {
+                Node newNode= new Node(packet.routerId.toString());
+                vertices.put(packet.routerId, newNode);
+            }
+        }
+        for (Node src : vertices.values()) {
+            for (Node dst : vertices.values()) {
+                edges.add(new Edge("test", src, dst, Integer.MAX_VALUE));
+            }
         }
 
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
             for (LinkState packet : entry.getValue().getLinkStates()) {
-                Vertex v = vertices.get(packet.routerId);
-                Edge edge = new Edge("id", vertices.get(entry.getKey()), v, packet.metric);
-                edges.add(edge);
+                Node dst = vertices.get(packet.routerId);
+                if (dst == null) {
+                    vertices.put(packet.routerId, new Node(packet.routerId.toString()));
+                    dst = vertices.get(packet.routerId);
+                }
+                Node src = vertices.get(entry.getKey());
+                for (Edge e : edges) {
+                    if (e.getSource() == src && e.getDestination() == dst) {
+                        e.setWeight(packet.metric);
+                    }
+                }
             }
         }
 
-        Graph graph = new Graph(vertices.values(), edges);
-        Dijkstra dijkstra = new Dijkstra(graph);
-        dijkstra.execute(vertices.get(getRouterID()));
-         System.out.println("Path to 192.168.3.2 from  :" + getRouterID());
-        LinkedList<Vertex> path = dijkstra.getPath(vertices.get(IPAddress.getByAddress(192, 168, 3, 2)));
-        for (Vertex vertex : path) {
-            System.out.println(vertex);
+        if (getRouterID().toString().equals("192.168.3.1")) {
+            Graph graph = new Graph(vertices.values(), edges);
+            Dijkstra dijkstra = new Dijkstra(graph);
+            dijkstra.calculate(vertices.get(getRouterID()));
+      
+
+            Node routerTo = vertices.get(vertices.keySet().toArray()[0]);
+            LinkedList<Node> path = dijkstra.getPath(routerTo);
+                  System.out.println("from: " + getRouterID() + "to " + routerTo);
+            if (path != null) {
+                for (Node vertex : path) {
+                    System.out.println(vertex);
+                }
+                System.out.println(dijkstra.getDistanceOfPath(path));
+            }
+
+            System.out.println("--------------------");
         }
-         System.out.println("--------------------");
+
     }
 
     @Override

@@ -15,15 +15,15 @@ import java.util.List;
  * @author alo
  */
 public class Graph {
-  private final List<Vertex> vertexes;
+  private final List<Node> vertexes;
   private final List<Edge> edges;
 
-  public Graph(Collection<Vertex> vertexes, Collection<Edge> edges) {
+  public Graph(Collection<Node> vertexes, Collection<Edge> edges) {
     this.vertexes =  new ArrayList<>(vertexes);
     this.edges = new ArrayList<>(edges);
   }
 
-  public List<Vertex> getVertexes() {
+  public List<Node> getVertexes() {
     return vertexes;
   }
 
