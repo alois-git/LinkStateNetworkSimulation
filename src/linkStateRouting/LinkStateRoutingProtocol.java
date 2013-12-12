@@ -39,10 +39,8 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     // routing table
     public final Map<IPAddress, LinkStateMessage> LSDB;
-    // forwarding table;
-    public final Map<IPAddress, IPInterfaceAdapter> FIB;
     // neibourgs table
-    public final Map<IPAddress, Integer> neighborList;
+    public final Map<IPAddress, LinkState> neighborList;
 
     private final IPLayer ip;
     private AbstractTimer LSDBTimer;
@@ -51,8 +49,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         super(router, PROTOCOL_NAME);
         this.ip = router.getIPLayer();
         this.LSDB = new HashMap<IPAddress, LinkStateMessage>();
-        this.FIB = new HashMap<IPAddress, IPInterfaceAdapter>();
-        this.neighborList = new HashMap<IPAddress, Integer>();
+        this.neighborList = new HashMap<IPAddress, LinkState>();
         this.HelloDelay = helloDelay;
         this.LSPDelay = lspDelay;
         LSDBTimer = new LSDBTimer(host.getNetwork().getScheduler(), LSPDelay, this);
@@ -98,18 +95,18 @@ public class LinkStateRoutingProtocol extends AbstractApplication
                 // if the sender has to router id in his neighbor list add him has a neighbor
                 // we had it permanently to our neighbor list.
                 if (hello.neighborList.contains(getRouterID())) {
-                    neighborList.put(hello.routerId, src.getMetric());
+                    neighborList.put(hello.routerId, new LinkState(hello.routerId, src.getMetric(), src));
                 } else {
-                    Map<IPAddress, Integer> OSPFTemp = neighborList;
-                    OSPFTemp.put(hello.routerId, src.getMetric());
+                    Map<IPAddress, LinkState> OSPFTemp = neighborList;
+                    OSPFTemp.put(hello.routerId, new LinkState(hello.routerId, src.getMetric(), src));
                     HelloMessage helloAnswer = new HelloMessage(getRouterID(), OSPFTemp.keySet());
                     src.send(new Datagram(src.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, helloAnswer), null);
                 }
             } else {
                 // if the HelloMessage contains a distance which is smaller than the one stored
                 // lets replace it.
-                if (neighborList.get(hello.routerId).intValue() > src.getMetric()) {
-                    neighborList.put(hello.routerId, src.getMetric());
+                if (neighborList.get(hello.routerId).metric > src.getMetric()) {
+                    neighborList.put(hello.routerId, new LinkState(hello.routerId, src.getMetric(), src));
                 }
             }
         }
@@ -142,8 +139,9 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     public void SendLSP() throws Exception {
         LinkStateMessage LFP = new LinkStateMessage(getRouterID());
-        for (Map.Entry<IPAddress, Integer> entry : neighborList.entrySet()) {
-            LFP.addLS(entry.getKey(), entry.getValue());
+        // add neighborList to a LinkStateMessage
+        for (LinkState entry : neighborList.values()) {
+            LFP.addLS(entry);
         }
         LSDB.put(getRouterID(), LFP);
         for (LinkStateMessage ourNeighbors : LSDB.values()) {
@@ -210,24 +208,22 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             }
         }
 
-        if (getRouterID().toString().equals("192.168.3.1")) {
-            Graph graph = new Graph(vertices.values(), edges);
-            Dijkstra dijkstra = new Dijkstra(graph);
-            dijkstra.calculate(vertices.get(getRouterID()));
+        Graph graph = new Graph(vertices.values(), edges);
+        Dijkstra dijkstra = new Dijkstra(graph);
+        dijkstra.calculate(vertices.get(getRouterID()));
 
-            Node routerTo = vertices.get(vertices.keySet().toArray()[2]);
-            LinkedList<Node> path = dijkstra.getPath(routerTo);
+        for (Node routerTo : vertices.values()) {
             System.out.println("from: " + getRouterID() + "to " + routerTo);
+            LinkedList<Node> path = dijkstra.getPath(routerTo);
             if (path != null) {
-                for (Node vertex : path) {
-                    System.out.println(vertex);
-                }
-                System.out.println(dijkstra.getDistanceOfPath(path));
+                System.out.println("Cost: " +dijkstra.getDistanceOfPath(path));
+                System.out.println("--------------------");
+                IPAddress firstInPath = IPAddress.getByAddress(path.get(1).getId());
+                IPInterfaceAdapter interfaceTo = neighborList.get(firstInPath).routerInterface;
+                LinkState ls = new LinkState(IPAddress.getByAddress(routerTo.getId()), dijkstra.getDistanceOfPath(path), interfaceTo);
+                ip.addRoute(new LinkStateRoutingEntry(ls.routerId, ls.routerInterface, ls));
             }
-
-            System.out.println("--------------------");
         }
-
     }
 
     @Override

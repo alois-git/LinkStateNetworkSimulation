@@ -9,6 +9,7 @@ import reso.ip.IPAddress;
 import reso.ip.IPInterfaceAdapter;
 
 /**
+ * Distance to a router.
  *
  * @author alo
  */
@@ -16,10 +17,12 @@ public class LinkState {
 
     public final IPAddress routerId;
     public final int metric;
+    public final IPInterfaceAdapter routerInterface;
 
-    public LinkState(IPAddress dst, int metric) {
+    public LinkState(IPAddress dst, int metric, IPInterfaceAdapter routerInterface) {
         this.routerId = dst;
         this.metric = metric;
+        this.routerInterface = routerInterface;
     }
 
     public String toString() {

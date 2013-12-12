@@ -6,14 +6,14 @@
 package linkStateRouting;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import reso.common.Message;
 import reso.ip.IPAddress;
 
 /**
- *
+ * Hello message send by router to let their neighbors they exist.
+ * and construct the neighbor table.
  * @author alo
  */
 public class HelloMessage implements Message {

@@ -12,6 +12,9 @@ import reso.ip.IPAddress;
 import reso.ip.IPInterfaceAdapter;
 
 /**
+ * Contains the routerId and the list of his neighbors and the distance. Also
+ * contains a sequence number to avoid LSP loops Each LSDB table entry is a
+ * LinkStateMessage
  *
  * @author alo
  */
@@ -40,8 +43,12 @@ public class LinkStateMessage implements Message {
         sequence++;
     }
 
-    public void addLS(IPAddress routerId, int metric) {
-        linkStates.add(new LinkState(routerId, metric));
+    public void addLS(IPAddress routerId, int metric, IPInterfaceAdapter routerInterface) {
+        linkStates.add(new LinkState(routerId, metric, routerInterface));
+    }
+    
+    public void addLS(LinkState state) {
+        linkStates.add(state);
     }
 
     public String toString() {
