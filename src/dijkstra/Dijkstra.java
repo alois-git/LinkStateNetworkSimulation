@@ -118,7 +118,7 @@ public class Dijkstra {
     }
 
     /**
-     * Updates the distances between the source and the not treated node
+     * Updates the distances between the source and the untreated node
      * (neighbors)
      *
      * @param node
@@ -126,7 +126,8 @@ public class Dijkstra {
     void findMinimalDistances(Node node) {
         List<Node> adjacentNodes = getNeighbors(node);
         for (Node target : adjacentNodes) {
-            if (getShortestDistance(target) > getShortestDistance(node) + getDistance(node, target)) {
+            // if you have Integer.Max_Value and a distance it makes a negative distance (took me a while debugging that)
+            if (getDistance(node, target) != Integer.MAX_VALUE && getShortestDistance(target) > getShortestDistance(node) + getDistance(node, target)) {
                 distances.put(target, getShortestDistance(node) + getDistance(node, target));
                 predecessors.put(target, node);
                 NotTreatedNodes.add(target);

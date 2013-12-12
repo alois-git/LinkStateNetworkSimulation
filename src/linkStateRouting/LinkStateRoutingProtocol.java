@@ -184,7 +184,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         ArrayList<Edge> edges = new ArrayList<Edge>();
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
             for (LinkState packet : entry.getValue().getLinkStates()) {
-                Node newNode= new Node(packet.routerId.toString());
+                Node newNode = new Node(packet.routerId.toString());
                 vertices.put(packet.routerId, newNode);
             }
         }
@@ -214,11 +214,10 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             Graph graph = new Graph(vertices.values(), edges);
             Dijkstra dijkstra = new Dijkstra(graph);
             dijkstra.calculate(vertices.get(getRouterID()));
-      
 
-            Node routerTo = vertices.get(vertices.keySet().toArray()[0]);
+            Node routerTo = vertices.get(vertices.keySet().toArray()[2]);
             LinkedList<Node> path = dijkstra.getPath(routerTo);
-                  System.out.println("from: " + getRouterID() + "to " + routerTo);
+            System.out.println("from: " + getRouterID() + "to " + routerTo);
             if (path != null) {
                 for (Node vertex : path) {
                     System.out.println(vertex);
