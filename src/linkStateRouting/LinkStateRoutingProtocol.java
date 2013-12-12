@@ -122,19 +122,6 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             }
             Compute(LSDB);
         }
-//
-//        System.out.println("LSDB of :" + getRouterID());
-//        for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
-//
-//            System.out.print("LSP: " + entry.getValue().routerId + ",Seq " + entry.getValue().sequence + ", Nb " + entry.getValue().linkStates.size());
-//            System.out.println("");
-//            for (LinkState ls : entry.getValue().linkStates) {
-//                System.out.println("[" + ls.routerId + ":" + ls.metric + "]");
-//            }
-//        }
-//        System.out.println("");
-//        System.out.println("---------------------------");
-
     }
 
     public void SendLSP() throws Exception {
@@ -188,7 +175,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         }
         for (Node src : vertices.values()) {
             for (Node dst : vertices.values()) {
-                edges.add(new Edge("test", src, dst, Integer.MAX_VALUE));
+                edges.add(new Edge("", src, dst, Integer.MAX_VALUE));
             }
         }
 
@@ -213,11 +200,8 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         dijkstra.calculate(vertices.get(getRouterID()));
 
         for (Node routerTo : vertices.values()) {
-            System.out.println("from: " + getRouterID() + "to " + routerTo);
             LinkedList<Node> path = dijkstra.getPath(routerTo);
             if (path != null) {
-                System.out.println("Cost: " +dijkstra.getDistanceOfPath(path));
-                System.out.println("--------------------");
                 IPAddress firstInPath = IPAddress.getByAddress(path.get(1).getId());
                 IPInterfaceAdapter interfaceTo = neighborList.get(firstInPath).routerInterface;
                 LinkState ls = new LinkState(IPAddress.getByAddress(routerTo.getId()), dijkstra.getDistanceOfPath(path), interfaceTo);

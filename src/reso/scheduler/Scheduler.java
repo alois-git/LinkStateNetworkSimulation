@@ -30,12 +30,14 @@ public class Scheduler
         return (pq.size() > 0);
     }
 
-    public void runNextEvent() throws Exception {
+    public void runNextEvent(){
         AbstractEvent evt = pq.poll();
         time = evt.getTime();
-
-        evt.run();
-
+      	try {
+    		evt.run();
+    	} catch (Exception e) {
+    		System.err.println(e.getMessage());
+    	}
     }
 
     public void dumpEvents() {

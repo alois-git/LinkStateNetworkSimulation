@@ -25,14 +25,14 @@ public abstract class AbstractScheduler
 
     public abstract void schedule(AbstractEvent evt);
     public abstract boolean hasMoreEvents();
-    public abstract void runNextEvent()  throws Exception; 
+    public abstract void runNextEvent(); 
 
-    public void run() throws Exception{
+    public void run(){
     	while (hasMoreEvents())
     		runNextEvent();
     }
     
-    public void runUntil(double timeLimit)  throws Exception{
+    public void runUntil(double timeLimit) {
     	while ((getCurrentTime() < timeLimit) && hasMoreEvents())
     		runNextEvent();
     }
