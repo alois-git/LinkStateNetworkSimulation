@@ -48,39 +48,40 @@ public class Demo {
         String filename = Demo.class.getClassLoader().getResource(TOPO_FILE).getFile();
 
         AbstractScheduler scheduler = new Scheduler();
-       
-            Network network = NetworkBuilder.loadTopology(filename, scheduler);
 
-            // Add routing protocol application to each router
-            for (Node n : network.getNodes()) {
-                if (!(n instanceof IPRouter)) {
-                    continue;
-                }
-                IPRouter router = (IPRouter) n;
-                boolean advertise = true;
-                //boolean advertise= (n.name.equals("R4"));
-                router.addApplication(new LinkStateRoutingProtocol(router,4,4));
-                router.start();
+        Network network = NetworkBuilder.loadTopology(filename, scheduler);
+
+        // Add routing protocol application to each router
+        for (Node n : network.getNodes()) {
+            if (!(n instanceof IPRouter)) {
+                continue;
             }
+            IPRouter router = (IPRouter) n;
+            boolean advertise = true;
+            //boolean advertise= (n.name.equals("R4"));
+            router.addApplication(new LinkStateRoutingProtocol(router, 5, 5));
+            router.start();
+        }
 
-            // Run simulation
-            scheduler.run();
+        // Run simulation
+        scheduler.runUntil(50);
 
-            // Display forwarding table for each node
-            FIBDumper.dumpForAllRouters(network);
+        // Display forwarding table for each node
+        FIBDumper.dumpForAllRouters(network);
 
-            for (Node n : network.getNodes()) {
-                //IPAddress ndst= ((IPHost) n).getIPLayer().getInterfaceByName("lo0").getAddress();
-                IPAddress ndst = getRouterID(((IPHost) n).getIPLayer());
-                File f = new File("/tmp/topology-routing-" + ndst + ".graphviz");
-                System.out.println("Writing file " + f);
-                Writer w = new BufferedWriter(new FileWriter(f));
-                NetworkGrapher.toGraphviz2(network, ndst, new PrintWriter(w));
-                w.close();
-            }
+        for (Node n : network.getNodes()) {
+            //IPAddress ndst= ((IPHost) n).getIPLayer().getInterfaceByName("lo0").getAddress();
+            IPAddress ndst = getRouterID(((IPHost) n).getIPLayer());
+            File f = new File("/tmp/topology-routing-" + ndst + ".graphviz");
+            System.out.println("Writing file " + f);
+            Writer w = new BufferedWriter(new FileWriter(f));
+            NetworkGrapher.toGraphviz2(network, ndst, new PrintWriter(w));
+            w.close();
+        }
 
-            // Display forwarding table for each node
-            FIBDumper.dumpForAllRouters(network);
+        ((IPHost) network.getNodeByName("R3")).getIPLayer().getInterfaceByName("eth0").setMetric(200);
+        network.getNodeByName("R3").getInterfaceByName("eth0").down();
+        network.getNodeByName("R3").getInterfaceByName("eth0").up();
 
     }
 

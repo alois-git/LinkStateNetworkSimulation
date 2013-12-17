@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import reso.common.AbstractApplication;
 import reso.common.AbstractTimer;
 import reso.common.Interface;
@@ -43,7 +46,8 @@ public class LinkStateRoutingProtocol extends AbstractApplication
     public final Map<IPAddress, LinkState> neighborList;
 
     private final IPLayer ip;
-    private AbstractTimer LSDBTimer;
+    private LSPTimer LSPTimer;
+    private HelloTimer HelloTimer;
 
     public LinkStateRoutingProtocol(IPRouter router, int helloDelay, int lspDelay) {
         super(router, PROTOCOL_NAME);
@@ -52,8 +56,10 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         this.neighborList = new HashMap<IPAddress, LinkState>();
         this.HelloDelay = helloDelay;
         this.LSPDelay = lspDelay;
-        LSDBTimer = new LSDBTimer(host.getNetwork().getScheduler(), LSPDelay, this);
-        LSDBTimer.start();
+        LSPTimer = new LSPTimer(host.getNetwork().getScheduler(), LSPDelay, true, this);
+        HelloTimer = new HelloTimer(host.getNetwork().getScheduler(), HelloDelay, true, this);
+        LSPTimer.start();
+        HelloTimer.start();
     }
 
     @Override
@@ -67,13 +73,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         }
 
         // saying hello to all his neighbours
-        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
-            if (iface instanceof IPLoopbackAdapter) {
-                continue;
-            }
-            HelloMessage hello = new HelloMessage(getRouterID(), neighborList.keySet());
-            iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, hello), null);
-        }
+        SendHelloToNeighbors();
     }
 
     @Override
@@ -109,6 +109,11 @@ public class LinkStateRoutingProtocol extends AbstractApplication
                     neighborList.put(hello.routerId, new LinkState(hello.routerId, src.getMetric(), src));
                 }
             }
+            LinkStateMessage currentNeighbors = new LinkStateMessage(getRouterID());
+            for (LinkState ls : neighborList.values()) {
+                currentNeighbors.addLS(ls);
+            }
+            LSDB.put(getRouterID(), currentNeighbors);
         }
 
         // LinkState message
@@ -122,25 +127,81 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             }
             Compute(LSDB);
         }
+
+//        System.out.println("LSDB of :" + getRouterID());
+//        for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
+//
+//            System.out.print("LSP: " + entry.getValue().routerId + ",Seq " + entry.getValue().sequence + ", Nb " + entry.getValue().linkStates.size());
+//            System.out.println("");
+//            for (LinkState ls : entry.getValue().linkStates) {
+//                System.out.println("[" + ls.routerId + ":" + ls.metric + "]");
+//            }
+//        }
+//        System.out.println("");
+//        System.out.println("---------------------------");
     }
 
-    public void SendLSP() throws Exception {
-        LinkStateMessage LFP = new LinkStateMessage(getRouterID());
-        // add neighborList to a LinkStateMessage
-        for (LinkState entry : neighborList.values()) {
-            LFP.addLS(entry);
+    @Override
+    public void attrChanged(Interface iface, String attr) {
+        if (attr.equals("metric")) {
+            for (Entry<IPAddress, LinkState> ls : neighborList.entrySet()) {
+                if (ls.getValue().routerInterface.equals(iface)) {
+                    neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, (int) iface.getAttribute("metric"), ls.getValue().routerInterface));
+                }
+            }
         }
-        LSDB.put(getRouterID(), LFP);
-        for (LinkStateMessage ourNeighbors : LSDB.values()) {
-            SendToAll(ourNeighbors);
+        if (attr.equals("state")) {
+            for (Entry<IPAddress, LinkState> ls : neighborList.entrySet()) {
+                if (ls.getValue().routerInterface.equals(iface)) {
+                    if (iface.isActive()) {
+                        neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, (int) iface.getAttribute("metric"), ls.getValue().routerInterface));
+                    } else {
+                        neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, Integer.MAX_VALUE, ls.getValue().routerInterface));
+                    }
+                }
+            }
+        }
+        try {
+            SendLSPToNeighbors();
+        } catch (Exception ex) {
+            Logger.getLogger(LinkStateRoutingProtocol.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public int addMetric(int m1, int m2) {
-        if (((long) m1) + ((long) m2) > Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
+    public void SendHelloToNeighbors() throws Exception {
+        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
+            if (iface instanceof IPLoopbackAdapter) {
+                continue;
+            }
+            HelloMessage hello = new HelloMessage(getRouterID(), neighborList.keySet());
+            iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, hello), null);
         }
-        return m1 + m2;
+    }
+
+    public void SendLSPToNeighbors() throws Exception {
+        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
+            if (iface instanceof IPLoopbackAdapter) {
+                continue;
+            }
+            LinkStateMessage LSM = new LinkStateMessage(getRouterID());
+            for (LinkState ls : neighborList.values()) {
+                LSM.addLS(ls);
+            }
+            iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, LSM), null);
+        }
+    }
+
+    private IPAddress getRouterID() {
+        IPAddress routerID = null;
+        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
+            IPAddress addr = iface.getAddress();
+            if (routerID == null) {
+                routerID = addr;
+            } else if (routerID.compareTo(addr) < 0) {
+                routerID = addr;
+            }
+        }
+        return routerID;
     }
 
     private void SendToAllButSender(IPInterfaceAdapter src, LinkStateMessage msg) throws Exception {
@@ -153,21 +214,11 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         }
     }
 
-    private void SendToAll(LinkStateMessage msg) throws Exception {
-        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
-            if (iface instanceof IPLoopbackAdapter) {
-                continue;
-            }
-            Datagram newDatagram = new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, msg);
-            iface.send(newDatagram, null);
-        }
-    }
-
     private void Compute(Map<IPAddress, LinkStateMessage> LSDB) throws Exception {
 
         HashMap<IPAddress, Node> vertices = new HashMap<IPAddress, Node>();
         ArrayList<Edge> edges = new ArrayList<Edge>();
-        
+
         // Construct the nodes list from the LSDB entries.
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
             Node newNode = new Node(entry.getKey().toString());
@@ -213,25 +264,6 @@ public class LinkStateRoutingProtocol extends AbstractApplication
                 ip.addRoute(new LinkStateRoutingEntry(ls.routerId, ls.routerInterface, ls));
             }
         }
-    }
-
-    @Override
-    public void attrChanged(Interface iface, String attr) {
-        System.out.println("attribute \"" + attr + "\" changed on interface \"" + iface + "\" : "
-                + iface.getAttribute(attr));
-    }
-
-    private IPAddress getRouterID() {
-        IPAddress routerID = null;
-        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
-            IPAddress addr = iface.getAddress();
-            if (routerID == null) {
-                routerID = addr;
-            } else if (routerID.compareTo(addr) < 0) {
-                routerID = addr;
-            }
-        }
-        return routerID;
     }
 
 }

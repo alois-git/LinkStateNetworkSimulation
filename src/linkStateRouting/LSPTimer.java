@@ -12,22 +12,22 @@ import reso.scheduler.AbstractScheduler;
  *
  * @author alo
  */
-public class HelloTimer extends AbstractTimer {
+public class LSPTimer extends AbstractTimer {
 
     private LinkStateRoutingProtocol protocol;
 
-    public HelloTimer(AbstractScheduler scheduler, double interval, boolean repeat) {
+    public LSPTimer(AbstractScheduler scheduler, double interval, boolean repeat) {
         super(scheduler, interval, repeat);
     }
 
-    public HelloTimer(AbstractScheduler scheduler, double interval, boolean repeat, LinkStateRoutingProtocol protocol) {
+    public LSPTimer(AbstractScheduler scheduler, double interval, boolean repeat, LinkStateRoutingProtocol protocol) {
         super(scheduler, interval, repeat);
         this.protocol = protocol;
     }
 
     @Override
     protected void run() throws Exception {
-        protocol.SendHelloToNeighbors();
+        protocol.SendLSPToNeighbors();
     }
 
 }
