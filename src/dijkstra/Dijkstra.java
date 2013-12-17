@@ -17,21 +17,22 @@ package dijkstra;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+/**
+ *
+ * @author alo
+ */
 public class Dijkstra {
 
     // N
     private final List<Node> nodes;
     private final List<Edge> edges;
 
-    private Set<Node> TreatedNodes = new HashSet<Node>();
     // N'
-    private Set<Node> NotTreatedNodes;
+    private FibonacciHeap<Node> NotTreatedNodes;
     // p(v)
     private Map<Node, Node> predecessors;
     // D(v)
@@ -39,12 +40,12 @@ public class Dijkstra {
 
     public Dijkstra(Graph graph) {
         // create a copy of the array so that we can operate on this array
-        this.nodes = new ArrayList<Node>(graph.getVertexes());
+        this.nodes = new ArrayList<Node>(graph.getNodes());
         this.edges = new ArrayList<Edge>(graph.getEdges());
     }
 
     public void calculate(Node source) {
-        NotTreatedNodes = new HashSet<Node>();
+        NotTreatedNodes = new FibonacciHeap<Node>();
         distances = new HashMap<Node, Integer>();
         predecessors = new HashMap<Node, Node>();
         // set infinity to all other node than myself
@@ -52,15 +53,24 @@ public class Dijkstra {
             distances.put(entry, Integer.MAX_VALUE);
         }
         distances.put(source, 0);
-        NotTreatedNodes.add(source);
+        NotTreatedNodes.insert(new FibonacciHeapNode(source), 0);
         // tant que N' != V
         while (NotTreatedNodes.size() > 0) {
             // find u not in N' such that D(u) is minimum
-            Node u = getClosestNode(NotTreatedNodes);
-            TreatedNodes.add(u);
-            NotTreatedNodes.remove(u);
+            FibonacciHeapNode<Node> fNode = NotTreatedNodes.min();
+            Node closestNode = fNode.getData();
+            NotTreatedNodes.delete(fNode);
             // for each v adjacent to u
-            findMinimalDistances(u);
+            List<Node> adjacentNodes = getNeighbors(closestNode);
+            for (Node target : adjacentNodes) {
+                // if you have Integer.Max_Value and add a distance, it makes a negative distance (took me a while debugging that)
+                if (getDistance(closestNode, target) != Integer.MAX_VALUE && getShortestDistance(closestNode) + getDistance(closestNode, target) < getShortestDistance(target)) {
+                    distances.put(target, getShortestDistance(closestNode) + getDistance(closestNode, target));
+                    predecessors.put(target, closestNode);
+                    FibonacciHeapNode targetNode = new FibonacciHeapNode(target);
+                    NotTreatedNodes.insert(targetNode, getShortestDistance(closestNode) + getDistance(closestNode, target));
+                }
+            }
         }
     }
 
@@ -90,59 +100,11 @@ public class Dijkstra {
     private List<Node> getNeighbors(Node node) {
         ArrayList<Node> neighbors = new ArrayList<Node>();
         for (Edge edge : this.edges) {
-            if (node.equals(edge.getSource()) && !isTreated(edge.getDestination())) {
+            if (node.equals(edge.getSource())) {
                 neighbors.add(edge.getDestination());
             }
         }
         return neighbors;
-    }
-
-    /**
-     * Return the closest node from source
-     *
-     * @param vertexes
-     * @return
-     */
-    private Node getClosestNode(Set<Node> vertexes) {
-        Node minimum = null;
-        for (Node vertex : vertexes) {
-            if (minimum == null) {
-                minimum = vertex;
-            } else {
-                if (getShortestDistance(vertex) < getShortestDistance(minimum)) {
-                    minimum = vertex;
-                }
-            }
-        }
-        return minimum;
-    }
-
-    /**
-     * Updates the distances between the source and the untreated node
-     * (neighbors)
-     *
-     * @param node
-     */
-    void findMinimalDistances(Node node) {
-        List<Node> adjacentNodes = getNeighbors(node);
-        for (Node target : adjacentNodes) {
-            // if you have Integer.Max_Value and add a distance, it makes a negative distance (took me a while debugging that)
-            if (getDistance(node, target) != Integer.MAX_VALUE && getShortestDistance(target) > getShortestDistance(node) + getDistance(node, target)) {
-                distances.put(target, getShortestDistance(node) + getDistance(node, target));
-                predecessors.put(target, node);
-                NotTreatedNodes.add(target);
-            }
-        }
-    }
-
-    /**
-     * Checks if a node is already processed
-     *
-     * @param node
-     * @return
-     */
-    boolean isTreated(Node node) {
-        return TreatedNodes.contains(node);
     }
 
     /**

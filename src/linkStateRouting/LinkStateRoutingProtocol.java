@@ -167,18 +167,21 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
         HashMap<IPAddress, Node> vertices = new HashMap<IPAddress, Node>();
         ArrayList<Edge> edges = new ArrayList<Edge>();
+        
+        // Construct the nodes list from the LSDB entries.
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
-            for (LinkState packet : entry.getValue().getLinkStates()) {
-                Node newNode = new Node(packet.routerId.toString());
-                vertices.put(packet.routerId, newNode);
-            }
+            Node newNode = new Node(entry.getKey().toString());
+            vertices.put(entry.getKey(), newNode);
         }
+        // Populate all the possible edge to MAX value (infinity).
         for (Node src : vertices.values()) {
             for (Node dst : vertices.values()) {
                 edges.add(new Edge("", src, dst, Integer.MAX_VALUE));
             }
         }
 
+        // Put the real distance to existing node.
+        // Take all the LSDB entry and build the edges.
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
             for (LinkState packet : entry.getValue().getLinkStates()) {
                 Node dst = vertices.get(packet.routerId);
@@ -195,10 +198,12 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             }
         }
 
+        // Build the graph and calculate shortest paths for the router.
         Graph graph = new Graph(vertices.values(), edges);
         Dijkstra dijkstra = new Dijkstra(graph);
         dijkstra.calculate(vertices.get(getRouterID()));
 
+        // add the route entry to the FIB table.
         for (Node routerTo : vertices.values()) {
             LinkedList<Node> path = dijkstra.getPath(routerTo);
             if (path != null) {

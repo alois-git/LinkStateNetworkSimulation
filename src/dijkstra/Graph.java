@@ -15,16 +15,16 @@ import java.util.List;
  * @author alo
  */
 public class Graph {
-  private final List<Node> vertexes;
+  private final List<Node> nodes;
   private final List<Edge> edges;
 
-  public Graph(Collection<Node> vertexes, Collection<Edge> edges) {
-    this.vertexes =  new ArrayList<>(vertexes);
+  public Graph(Collection<Node> nodes, Collection<Edge> edges) {
+    this.nodes =  new ArrayList<>(nodes);
     this.edges = new ArrayList<>(edges);
   }
 
-  public List<Node> getVertexes() {
-    return vertexes;
+  public List<Node> getNodes() {
+    return nodes;
   }
 
   public List<Edge> getEdges() {
