@@ -28,47 +28,50 @@ import java.util.Map;
 public class Dijkstra {
 
     // N
-    private final List<Node> nodes;
+    private final List<FibonacciHeapNode> nodes;
     private final List<Edge> edges;
 
     // N'
-    private FibonacciHeap<Node> NotTreatedNodes;
+    private FibonacciHeap NotTreatedNodes;
     // p(v)
-    private Map<Node, Node> predecessors;
+    private Map<FibonacciHeapNode, FibonacciHeapNode> predecessors;
     // D(v)
-    private Map<Node, Integer> distances;
+    private Map<FibonacciHeapNode, Integer> distances;
 
     public Dijkstra(Graph graph) {
         // create a copy of the array so that we can operate on this array
-        this.nodes = new ArrayList<Node>(graph.getNodes());
+        this.nodes = new ArrayList<FibonacciHeapNode>(graph.getNodes());
         this.edges = new ArrayList<Edge>(graph.getEdges());
     }
 
-    public void calculate(Node source) {
-        NotTreatedNodes = new FibonacciHeap<Node>();
-        distances = new HashMap<Node, Integer>();
-        predecessors = new HashMap<Node, Node>();
+    public void calculate(FibonacciHeapNode source) {
+        NotTreatedNodes = new FibonacciHeap();
+        distances = new HashMap<FibonacciHeapNode, Integer>();
+        predecessors = new HashMap<FibonacciHeapNode, FibonacciHeapNode>();
         // set infinity to all other node than myself
-        for (Node entry : distances.keySet()) {
+        for (FibonacciHeapNode entry : distances.keySet()) {
             distances.put(entry, Integer.MAX_VALUE);
         }
+        for (FibonacciHeapNode node : this.nodes) {
+            if (node == source) {
+                NotTreatedNodes.insert(source, 0);
+            } else {
+                NotTreatedNodes.insert(node, Integer.MAX_VALUE);
+            }
+        }
         distances.put(source, 0);
-        NotTreatedNodes.insert(new FibonacciHeapNode(source), 0);
         // tant que N' != V
-        while (NotTreatedNodes.size() > 0) {
+        while (!NotTreatedNodes.isEmpty()) {
             // find u not in N' such that D(u) is minimum
-            FibonacciHeapNode<Node> fNode = NotTreatedNodes.min();
-            Node closestNode = fNode.getData();
-            NotTreatedNodes.delete(fNode);
+            FibonacciHeapNode closestNode = NotTreatedNodes.removeMin();
             // for each v adjacent to u
-            List<Node> adjacentNodes = getNeighbors(closestNode);
-            for (Node target : adjacentNodes) {
+            List<FibonacciHeapNode> adjacentNodes = getNeighbors(closestNode);
+            for (FibonacciHeapNode target : adjacentNodes) {
                 // if you have Integer.Max_Value and add a distance, it makes a negative distance (took me a while debugging that)
                 if (getDistance(closestNode, target) != Integer.MAX_VALUE && getShortestDistance(closestNode) + getDistance(closestNode, target) < getShortestDistance(target)) {
                     distances.put(target, getShortestDistance(closestNode) + getDistance(closestNode, target));
                     predecessors.put(target, closestNode);
-                    FibonacciHeapNode targetNode = new FibonacciHeapNode(target);
-                    NotTreatedNodes.insert(targetNode, getShortestDistance(closestNode) + getDistance(closestNode, target));
+                    NotTreatedNodes.decreaseKey(target, getShortestDistance(closestNode) + getDistance(closestNode, target));
                 }
             }
         }
@@ -81,7 +84,7 @@ public class Dijkstra {
      * @param target
      * @return
      */
-    private int getDistance(Node node, Node target) {
+    private int getDistance(FibonacciHeapNode node, FibonacciHeapNode target) {
         for (Edge edge : edges) {
             if (edge.getSource().equals(node)
                     && edge.getDestination().equals(target)) {
@@ -97,8 +100,8 @@ public class Dijkstra {
      * @param node
      * @return
      */
-    private List<Node> getNeighbors(Node node) {
-        ArrayList<Node> neighbors = new ArrayList<Node>();
+    private List<FibonacciHeapNode> getNeighbors(FibonacciHeapNode node) {
+        ArrayList<FibonacciHeapNode> neighbors = new ArrayList<FibonacciHeapNode>();
         for (Edge edge : this.edges) {
             if (node.equals(edge.getSource())) {
                 neighbors.add(edge.getDestination());
@@ -113,7 +116,7 @@ public class Dijkstra {
      * @param destination
      * @return
      */
-    private int getShortestDistance(Node destination) {
+    private int getShortestDistance(FibonacciHeapNode destination) {
         Integer d = distances.get(destination);
         if (d == null) {
             return Integer.MAX_VALUE;
@@ -128,9 +131,9 @@ public class Dijkstra {
      * @param target
      * @return
      */
-    public LinkedList<Node> getPath(Node target) {
-        LinkedList<Node> path = new LinkedList<Node>();
-        Node step = target;
+    public LinkedList<FibonacciHeapNode> getPath(FibonacciHeapNode target) {
+        LinkedList<FibonacciHeapNode> path = new LinkedList<FibonacciHeapNode>();
+        FibonacciHeapNode step = target;
         // check if a path exists
         if (predecessors.get(step) == null) {
             return null;
@@ -151,7 +154,7 @@ public class Dijkstra {
      * @param path
      * @return
      */
-    public int getDistanceOfPath(List<Node> path) {
+    public int getDistanceOfPath(List<FibonacciHeapNode> path) {
         return getShortestDistance(path.get(path.size() - 1));
     }
 

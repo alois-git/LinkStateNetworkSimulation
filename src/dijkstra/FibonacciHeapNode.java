@@ -48,6 +48,8 @@
  */
 package dijkstra;
 
+import reso.ip.IPAddress;
+
 /**
  * Implements a node of the Fibonacci heap. It holds the information necessary
  * for maintaining the structure of the heap. It also holds the reference to the
@@ -55,32 +57,32 @@ package dijkstra;
  *
  * @author Nathan Fiedler
  */
-public class FibonacciHeapNode<T> {
+public class FibonacciHeapNode {
 
     /**
      * Node data.
      */
-    T data;
+    IPAddress data;
 
     /**
      * first child node
      */
-    FibonacciHeapNode<T> child;
+    FibonacciHeapNode child;
 
     /**
      * left sibling node
      */
-    FibonacciHeapNode<T> left;
+    FibonacciHeapNode left;
 
     /**
      * parent node
      */
-    FibonacciHeapNode<T> parent;
+    FibonacciHeapNode parent;
 
     /**
      * right sibling node
      */
-    FibonacciHeapNode<T> right;
+    FibonacciHeapNode right;
 
     /**
      * true if this node has had a child removed since this node was added to
@@ -104,10 +106,10 @@ public class FibonacciHeapNode<T> {
      *
      * @param data data for this node
      */
-    public FibonacciHeapNode(T data) {
+    public FibonacciHeapNode(IPAddress ip) {
         right = this;
         left = this;
-        this.data = data;
+        this.data = ip;
         key = Double.POSITIVE_INFINITY;
     }
 
@@ -123,7 +125,7 @@ public class FibonacciHeapNode<T> {
     /**
      * Obtain the data for this node.
      */
-    public final T getData() {
+    public final IPAddress getData() {
         return data;
     }
 

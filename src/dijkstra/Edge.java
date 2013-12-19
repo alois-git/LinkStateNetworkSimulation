@@ -11,11 +11,11 @@ package dijkstra;
  */
 public class Edge  {
   private String id; 
-  private Node source;
-  private Node destination;
+  private FibonacciHeapNode source;
+  private FibonacciHeapNode destination;
   private int weight; 
   
-  public Edge(String id, Node source, Node destination, int weight) {
+  public Edge(String id, FibonacciHeapNode source, FibonacciHeapNode destination, int weight) {
     this.id = id;
     this.source = source;
     this.destination = destination;
@@ -25,11 +25,11 @@ public class Edge  {
   public String getId() {
     return id;
   }
-  public Node getDestination() {
+  public FibonacciHeapNode getDestination() {
     return destination;
   }
 
-  public Node getSource() {
+  public FibonacciHeapNode getSource() {
     return source;
   }
   public int getWeight() {

@@ -7,6 +7,7 @@ package linkStateRouting;
 
 import dijkstra.Dijkstra;
 import dijkstra.Edge;
+import dijkstra.FibonacciHeapNode;
 import dijkstra.Graph;
 import dijkstra.Node;
 import java.util.ArrayList;
@@ -216,17 +217,17 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     private void Compute(Map<IPAddress, LinkStateMessage> LSDB) throws Exception {
 
-        HashMap<IPAddress, Node> vertices = new HashMap<IPAddress, Node>();
+        HashMap<IPAddress, FibonacciHeapNode> vertices = new HashMap<IPAddress, FibonacciHeapNode>();
         ArrayList<Edge> edges = new ArrayList<Edge>();
 
         // Construct the nodes list from the LSDB entries.
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
-            Node newNode = new Node(entry.getKey().toString());
+            FibonacciHeapNode newNode = new FibonacciHeapNode(entry.getKey());
             vertices.put(entry.getKey(), newNode);
         }
         // Populate all the possible edge to MAX value (infinity).
-        for (Node src : vertices.values()) {
-            for (Node dst : vertices.values()) {
+        for (FibonacciHeapNode src : vertices.values()) {
+            for (FibonacciHeapNode dst : vertices.values()) {
                 edges.add(new Edge("", src, dst, Integer.MAX_VALUE));
             }
         }
@@ -235,12 +236,12 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         // Take all the LSDB entry and build the edges.
         for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
             for (LinkState packet : entry.getValue().getLinkStates()) {
-                Node dst = vertices.get(packet.routerId);
+                FibonacciHeapNode dst = vertices.get(packet.routerId);
                 if (dst == null) {
-                    vertices.put(packet.routerId, new Node(packet.routerId.toString()));
+                    vertices.put(packet.routerId, new FibonacciHeapNode(packet.routerId));
                     dst = vertices.get(packet.routerId);
                 }
-                Node src = vertices.get(entry.getKey());
+                FibonacciHeapNode src = vertices.get(entry.getKey());
                 for (Edge e : edges) {
                     if (e.getSource() == src && e.getDestination() == dst) {
                         e.setWeight(packet.metric);
@@ -255,12 +256,12 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         dijkstra.calculate(vertices.get(getRouterID()));
 
         // add the route entry to the FIB table.
-        for (Node routerTo : vertices.values()) {
-            LinkedList<Node> path = dijkstra.getPath(routerTo);
+        for (FibonacciHeapNode routerTo : vertices.values()) {
+            LinkedList<FibonacciHeapNode> path = dijkstra.getPath(routerTo);
             if (path != null) {
-                IPAddress firstInPath = IPAddress.getByAddress(path.get(1).getId());
+                IPAddress firstInPath = path.get(1).getData();
                 IPInterfaceAdapter interfaceTo = neighborList.get(firstInPath).routerInterface;
-                LinkState ls = new LinkState(IPAddress.getByAddress(routerTo.getId()), dijkstra.getDistanceOfPath(path), interfaceTo);
+                LinkState ls = new LinkState(routerTo.getData(), dijkstra.getDistanceOfPath(path), interfaceTo);
                 ip.addRoute(new LinkStateRoutingEntry(ls.routerId, ls.routerInterface, ls));
             }
         }
