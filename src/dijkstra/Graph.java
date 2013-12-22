@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package dijkstra;
 
 import java.util.ArrayList;
@@ -11,26 +5,26 @@ import java.util.Collection;
 import java.util.List;
 
 /**
+ * Th graph contains all the routers and their link to each others.
  *
  * @author alo
  */
 public class Graph {
-  private final List<FibonacciHeapNode> nodes;
-  private final List<Edge> edges;
 
-  public Graph(Collection<FibonacciHeapNode> nodes, Collection<Edge> edges) {
-    this.nodes =  new ArrayList<>(nodes);
-    this.edges = new ArrayList<>(edges);
-  }
+    private final List<FibonacciHeapNode> nodes;
+    private final List<Edge> edges;
 
-  public List<FibonacciHeapNode> getNodes() {
-    return nodes;
-  }
+    public Graph(Collection<FibonacciHeapNode> nodes, Collection<Edge> edges) {
+        this.nodes = new ArrayList<>(nodes);
+        this.edges = new ArrayList<>(edges);
+    }
 
-  public List<Edge> getEdges() {
-    return edges;
-  }
-  
-  
-  
-} 
+    public List<FibonacciHeapNode> getNodes() {
+        return nodes;
+    }
+
+    public List<Edge> getEdges() {
+        return edges;
+    }
+
+}

@@ -27,7 +27,7 @@ public class HelloTimer extends AbstractTimer {
 
     @Override
     protected void run() throws Exception {
-        protocol.SendHelloToNeighbors();
+        protocol.SendHelloToAllInterfaces();
     }
 
 }

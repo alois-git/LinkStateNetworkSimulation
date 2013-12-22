@@ -38,18 +38,28 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     public static final String PROTOCOL_NAME = "LS_ROUTING";
     public static final int IP_PROTO_LS = Datagram.allocateProtocolNumber(PROTOCOL_NAME);
-    public int HelloDelay;
-    public int LSPDelay;
-
     // routing table
     public final Map<IPAddress, LinkStateMessage> LSDB;
     // neibourgs table
     public final Map<IPAddress, LinkState> neighborList;
 
     private final IPLayer ip;
+
     private LSPTimer LSPTimer;
+
     private HelloTimer HelloTimer;
 
+    // delay for hello packet send
+    private int HelloDelay;
+    // delay for LSP packet send
+    private int LSPDelay;
+
+    /**
+     * Constructor 
+     * @param router is the router that hosts the routing protocol
+     * @param helloDelay delay for hello packet.
+     * @param lspDelay delay for LSP packet.
+     */
     public LinkStateRoutingProtocol(IPRouter router, int helloDelay, int lspDelay) {
         super(router, PROTOCOL_NAME);
         this.ip = router.getIPLayer();
@@ -74,7 +84,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         }
 
         // saying hello to all his neighbours
-        SendHelloToNeighbors();
+        SendHelloToAllInterfaces();
     }
 
     @Override
@@ -88,7 +98,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
     @Override
     public void receive(IPInterfaceAdapter src, Datagram datagram) throws Exception {
 
-        // hello message received from one of our neibourg
+        // hello message received from one of our neibourg (maybe not)
         if (datagram.getPayload() instanceof HelloMessage) {
             HelloMessage hello = (HelloMessage) datagram.getPayload();
             // Check if the router is not already in our neighbor list.
@@ -117,7 +127,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             LSDB.put(getRouterID(), currentNeighbors);
         }
 
-        // LinkState message
+        // LinkState message received from one of our neibourg
         if (datagram.getPayload() instanceof LinkStateMessage) {
             LinkStateMessage msg = (LinkStateMessage) datagram.getPayload();
 
@@ -128,21 +138,13 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             }
             Compute(LSDB);
         }
-
-//        System.out.println("LSDB of :" + getRouterID());
-//        for (Map.Entry<IPAddress, LinkStateMessage> entry : LSDB.entrySet()) {
-//
-//            System.out.print("LSP: " + entry.getValue().routerId + ",Seq " + entry.getValue().sequence + ", Nb " + entry.getValue().linkStates.size());
-//            System.out.println("");
-//            for (LinkState ls : entry.getValue().linkStates) {
-//                System.out.println("[" + ls.routerId + ":" + ls.metric + "]");
-//            }
-//        }
-//        System.out.println("");
-//        System.out.println("---------------------------");
     }
 
     @Override
+    /**
+     * When attribute changed we need to change our LSDB and neighborList and
+     * and send to everyone a new LSP to keep them up to date.
+     */
     public void attrChanged(Interface iface, String attr) {
         if (attr.equals("metric")) {
             for (Entry<IPAddress, LinkState> ls : neighborList.entrySet()) {
@@ -163,13 +165,17 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             }
         }
         try {
-            SendLSPToNeighbors();
+            SendLSPToAllInterfaces();
         } catch (Exception ex) {
             Logger.getLogger(LinkStateRoutingProtocol.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void SendHelloToNeighbors() throws Exception {
+    /**
+     * Send HelloMessage on all our interfaces.
+     * @throws Exception 
+     */
+    public void SendHelloToAllInterfaces() throws Exception {
         for (IPInterfaceAdapter iface : ip.getInterfaces()) {
             if (iface instanceof IPLoopbackAdapter) {
                 continue;
@@ -179,7 +185,11 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         }
     }
 
-    public void SendLSPToNeighbors() throws Exception {
+    /**
+     * Send LinkStateMessage on all our interfaces
+     * @throws Exception 
+     */
+    public void SendLSPToAllInterfaces() throws Exception {
         for (IPInterfaceAdapter iface : ip.getInterfaces()) {
             if (iface instanceof IPLoopbackAdapter) {
                 continue;
@@ -189,6 +199,22 @@ public class LinkStateRoutingProtocol extends AbstractApplication
                 LSM.addLS(ls);
             }
             iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, LSM), null);
+        }
+    }
+    
+    /**
+     * Send LinkStateMessage on all our interfaces but the one we got it from.
+     * @param src
+     * @param msg
+     * @throws Exception 
+     */
+    private void SendToAllButSender(IPInterfaceAdapter src, LinkStateMessage msg) throws Exception {
+        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
+            if (iface.equals(src) || iface instanceof IPLoopbackAdapter) {
+                continue;
+            }
+            Datagram newDatagram = new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, msg);
+            iface.send(newDatagram, null);
         }
     }
 
@@ -205,16 +231,11 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         return routerID;
     }
 
-    private void SendToAllButSender(IPInterfaceAdapter src, LinkStateMessage msg) throws Exception {
-        for (IPInterfaceAdapter iface : ip.getInterfaces()) {
-            if (iface.equals(src) || iface instanceof IPLoopbackAdapter) {
-                continue;
-            }
-            Datagram newDatagram = new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, msg);
-            iface.send(newDatagram, null);
-        }
-    }
-
+    /**
+     * Calculate the shortest path from a router to all the other routers.
+     * @param LSDB
+     * @throws Exception 
+     */
     private void Compute(Map<IPAddress, LinkStateMessage> LSDB) throws Exception {
 
         HashMap<IPAddress, FibonacciHeapNode> vertices = new HashMap<IPAddress, FibonacciHeapNode>();

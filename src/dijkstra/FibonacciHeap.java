@@ -304,7 +304,7 @@ public class FibonacciHeap {
      *
      * @return new heap containing h1 and h2
      */
-    public static  FibonacciHeap union(
+    public static FibonacciHeap union(
             FibonacciHeap h1,
             FibonacciHeap h2) {
         FibonacciHeap h = new FibonacciHeap();

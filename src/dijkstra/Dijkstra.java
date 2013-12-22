@@ -126,7 +126,8 @@ public class Dijkstra {
     }
 
     /**
-     * Return the path to a specific node
+     * Return the path to a specific node to construct that path we go backward
+     * (start from the target to the source) and than revert the path.
      *
      * @param target
      * @return

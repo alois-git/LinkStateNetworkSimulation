@@ -27,7 +27,7 @@ public class LSPTimer extends AbstractTimer {
 
     @Override
     protected void run() throws Exception {
-        protocol.SendLSPToNeighbors();
+        protocol.SendLSPToAllInterfaces();
     }
 
 }
