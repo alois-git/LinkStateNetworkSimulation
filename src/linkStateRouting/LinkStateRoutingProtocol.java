@@ -152,20 +152,19 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             }
         }
         if (attr.equals("state")) {
+            IPAddress keyToRemove = null;
             for (Entry<IPAddress, LinkState> ls : neighborList.entrySet()) {
                 if (ls.getValue().routerInterface.equals(iface)) {
                     if (iface.isActive()) {
                         neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, (int) iface.getAttribute("metric"), ls.getValue().routerInterface));
                     } else {
-                        neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, Integer.MAX_VALUE, ls.getValue().routerInterface));
+                        keyToRemove = ls.getKey();
                     }
                 }
             }
-        }
-        try {
-            SendLSPToAllInterfaces();
-        } catch (Exception ex) {
-            Logger.getLogger(LinkStateRoutingProtocol.class.getName()).log(Level.SEVERE, null, ex);
+            if (keyToRemove != null){
+                neighborList.remove(keyToRemove);
+            }
         }
     }
 
@@ -196,6 +195,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             for (LinkState ls : neighborList.values()) {
                 LSM.addLS(ls);
             }
+            LSDB.put(getRouterID(), LSM);
             iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, LSM), null);
         }
     }

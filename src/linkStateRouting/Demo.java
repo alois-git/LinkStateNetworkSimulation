@@ -29,7 +29,7 @@ import reso.utilities.NetworkGrapher;
  */
 public class Demo {
 
-    public static final String TOPO_FILE = "reso/data/topology.txt";
+    public static final String TOPO_FILE = "reso/data/topology2.txt";
 
     private static IPAddress getRouterID(IPLayer ip) {
         IPAddress routerID = null;
@@ -62,7 +62,11 @@ public class Demo {
             router.addApplication(new LinkStateRoutingProtocol(router, 5, 5));
             router.start();
         }
-
+        
+        // timer to change some attr value
+        AttrChangeTimer attrTimer = new AttrChangeTimer(scheduler, 20, true, network);
+        attrTimer.start();
+        
         // Run simulation
         scheduler.runUntil(50);
 
@@ -78,11 +82,6 @@ public class Demo {
             NetworkGrapher.toGraphviz2(network, ndst, new PrintWriter(w));
             w.close();
         }
-
-        ((IPHost) network.getNodeByName("R3")).getIPLayer().getInterfaceByName("eth0").setMetric(200);
-        network.getNodeByName("R3").getInterfaceByName("eth0").down();
-        network.getNodeByName("R3").getInterfaceByName("eth0").up();
-
     }
 
 }
