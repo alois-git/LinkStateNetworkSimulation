@@ -57,8 +57,6 @@ public class Demo {
                 continue;
             }
             IPRouter router = (IPRouter) n;
-            boolean advertise = true;
-            //boolean advertise= (n.name.equals("R4"));
             router.addApplication(new LinkStateRoutingProtocol(router, 5, 5));
             router.start();
         }
