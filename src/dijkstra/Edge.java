@@ -1,11 +1,8 @@
-/**
- * Edge which are the interface (link) between the routers.
- */
+
 package dijkstra;
 
 /**
- *
- * @author alo
+ * Edge which are the interface (link) between the routers.
  */
 public class Edge  {
   private String id; 

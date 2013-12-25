@@ -56,6 +56,7 @@ import reso.ip.IPAddress;
  * key value (which is used to determine the heap structure).
  *
  * @author Nathan Fiedler
+ * edited by Alois
  */
 public class FibonacciHeapNode {
 
