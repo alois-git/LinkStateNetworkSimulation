@@ -68,7 +68,14 @@ public class Dijkstra {
             List<FibonacciHeapNode> adjacentNodes = getNeighbors(closestNode);
             for (FibonacciHeapNode target : adjacentNodes) {
                 // if you have Integer.Max_Value and add a distance, it makes a negative distance (took me a while debugging that)
-                if (getDistance(closestNode, target) != Integer.MAX_VALUE && getShortestDistance(closestNode) + getDistance(closestNode, target) < getShortestDistance(target)) {
+                    // if you have Integer.Max_Value and add a distance, it makes a negative distance (took me a while debugging that)
+                int somme = 0;
+                if (getShortestDistance(closestNode) == Integer.MAX_VALUE || getDistance(closestNode, target) == Integer.MAX_VALUE) {
+                    somme = Integer.MAX_VALUE;
+                } else {
+                    somme = getShortestDistance(closestNode) + getDistance(closestNode, target);
+                }
+                if ( getShortestDistance(target) > somme) {
                     distances.put(target, getShortestDistance(closestNode) + getDistance(closestNode, target));
                     predecessors.put(target, closestNode);
                     NotTreatedNodes.decreaseKey(target, getShortestDistance(closestNode) + getDistance(closestNode, target));

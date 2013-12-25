@@ -9,7 +9,6 @@ import dijkstra.Dijkstra;
 import dijkstra.Edge;
 import dijkstra.FibonacciHeapNode;
 import dijkstra.Graph;
-import dijkstra.Node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,7 +17,6 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import reso.common.AbstractApplication;
-import reso.common.AbstractTimer;
 import reso.common.Interface;
 import reso.common.InterfaceAttrListener;
 import reso.ip.Datagram;
@@ -111,7 +109,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
                     Map<IPAddress, LinkState> OSPFTemp = neighborList;
                     OSPFTemp.put(hello.routerId, new LinkState(hello.routerId, src.getMetric(), src));
                     HelloMessage helloAnswer = new HelloMessage(getRouterID(), OSPFTemp.keySet());
-                    src.send(new Datagram(src.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, helloAnswer), null);
+                    src.send(new Datagram(src.getAddress(), datagram.src, IP_PROTO_LS, 1, helloAnswer), null);
                 }
             } else {
                 // if the HelloMessage contains a distance which is smaller than the one stored
