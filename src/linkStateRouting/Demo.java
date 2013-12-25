@@ -64,7 +64,7 @@ public class Demo {
         }
         
         // timer to change some attr value
-        AttrChangeTimer attrTimer = new AttrChangeTimer(scheduler, 20, true, network);
+        AttrChangeTimer attrTimer = new AttrChangeTimer(scheduler, 30, true, network);
         attrTimer.start();
         
         // Run simulation

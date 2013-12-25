@@ -53,7 +53,8 @@ public class LinkStateRoutingProtocol extends AbstractApplication
     private int LSPDelay;
 
     /**
-     * Constructor 
+     * Constructor
+     *
      * @param router is the router that hosts the routing protocol
      * @param helloDelay delay for hello packet.
      * @param lspDelay delay for LSP packet.
@@ -162,7 +163,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
                     }
                 }
             }
-            if (keyToRemove != null){
+            if (keyToRemove != null) {
                 neighborList.remove(keyToRemove);
             }
         }
@@ -170,7 +171,8 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     /**
      * Send HelloMessage on all our interfaces.
-     * @throws Exception 
+     *
+     * @throws Exception
      */
     public void SendHelloToAllInterfaces() throws Exception {
         for (IPInterfaceAdapter iface : ip.getInterfaces()) {
@@ -184,7 +186,8 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     /**
      * Send LinkStateMessage on all our interfaces
-     * @throws Exception 
+     *
+     * @throws Exception
      */
     public void SendLSPToAllInterfaces() throws Exception {
         for (IPInterfaceAdapter iface : ip.getInterfaces()) {
@@ -199,12 +202,13 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST, IP_PROTO_LS, 1, LSM), null);
         }
     }
-    
+
     /**
      * Send LinkStateMessage on all our interfaces but the one we got it from.
+     *
      * @param src
      * @param msg
-     * @throws Exception 
+     * @throws Exception
      */
     private void SendToAllButSender(IPInterfaceAdapter src, LinkStateMessage msg) throws Exception {
         for (IPInterfaceAdapter iface : ip.getInterfaces()) {
@@ -231,8 +235,9 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     /**
      * Calculate the shortest path from a router to all the other routers.
+     *
      * @param LSDB
-     * @throws Exception 
+     * @throws Exception
      */
     private void Compute(Map<IPAddress, LinkStateMessage> LSDB) throws Exception {
 
@@ -279,9 +284,12 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             LinkedList<FibonacciHeapNode> path = dijkstra.getPath(routerTo);
             if (path != null) {
                 IPAddress firstInPath = path.get(1).getData();
-                IPInterfaceAdapter interfaceTo = neighborList.get(firstInPath).routerInterface;
-                LinkState ls = new LinkState(routerTo.getData(), dijkstra.getDistanceOfPath(path), interfaceTo);
-                ip.addRoute(new LinkStateRoutingEntry(ls.routerId, ls.routerInterface, ls));
+                LinkState neighbor = neighborList.get(firstInPath);
+                if (neighbor != null) {
+                    IPInterfaceAdapter interfaceTo = neighbor.routerInterface;
+                    LinkState ls = new LinkState(routerTo.getData(), dijkstra.getDistanceOfPath(path), interfaceTo);
+                    ip.addRoute(new LinkStateRoutingEntry(ls.routerId, ls.routerInterface, ls));
+                }
             }
         }
     }
