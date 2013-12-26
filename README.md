@@ -4,9 +4,9 @@
 \usepackage[T1]{fontenc}
 \title{Rapport LinkStateRouting}
 \author{Elodie Delcambe 142066 & Alois Paulus 141582 Groupe 11}
-\maketitle
 
 \begin{document}
+
 \tableofcontents
 \newpage
 \section{Construction et Exécution}
@@ -14,13 +14,12 @@
 \begin{itemize}
 \item se placer dans le dossier src
 \item lancer la commande : javac -d ../build -sourcepath . linkStateRouting/Demo.java
-\item
+
 \end{itemize}
 \subsection{Exécution}
 \begin{itemize}
 \item se placer dans le dossier build
 \item lancer la commande : java -cp . linkStateRouting.Demo
-\item
 
 \end{itemize}
 
@@ -39,6 +38,7 @@ Lorsqu'il reçoit un LSP, il le stocke dans une HashMap appelée LSDB et chaque 
 \item Utilisation du tas de Fibonacci dans cet algorithme, également pour des raisons de rapidité.
 \end{itemize}
 \end{itemize}
+\newpage
 \section{Problèmes rencontrés}
 \begin{itemize}
 \item
