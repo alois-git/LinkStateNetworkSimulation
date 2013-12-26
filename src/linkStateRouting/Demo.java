@@ -57,14 +57,14 @@ public class Demo {
                 continue;
             }
             IPRouter router = (IPRouter) n;
-            router.addApplication(new LinkStateRoutingProtocol(router, 5, 5));
+            router.addApplication(new LinkStateRoutingProtocol(router, 2, 5));
             router.start();
         }
-        
+
         // timer to change some attr value
-        AttrChangeTimer attrTimer = new AttrChangeTimer(scheduler, 30, true, network);
-        attrTimer.start();
-        
+        //AttrChangeTimer attrTimer = new AttrChangeTimer(scheduler, 30, true, network);
+        //attrTimer.start();
+
         // Run simulation
         scheduler.runUntil(50);
 
