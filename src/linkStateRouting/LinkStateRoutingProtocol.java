@@ -146,7 +146,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
         if (attr.equals("metric")) {
             for (Entry<IPAddress, LinkState> ls : neighborList.entrySet()) {
                 if (ls.getValue().routerInterface.equals(iface)) {
-                    neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, (int) iface.getAttribute("metric"), ls.getValue().routerInterface));
+                    neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, (Integer) iface.getAttribute("metric"), ls.getValue().routerInterface));
                 }
             }
         }
@@ -155,7 +155,7 @@ public class LinkStateRoutingProtocol extends AbstractApplication
             for (Entry<IPAddress, LinkState> ls : neighborList.entrySet()) {
                 if (ls.getValue().routerInterface.equals(iface)) {
                     if (iface.isActive()) {
-                        neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, (int) iface.getAttribute("metric"), ls.getValue().routerInterface));
+                        neighborList.put(ls.getKey(), new LinkState(ls.getValue().routerId, (Integer) iface.getAttribute("metric"), ls.getValue().routerInterface));
                     } else {
                         keyToRemove = ls.getKey();
                     }
