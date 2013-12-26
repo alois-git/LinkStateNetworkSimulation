@@ -14,8 +14,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import reso.common.AbstractApplication;
 import reso.common.Interface;
 import reso.common.InterfaceAttrListener;
@@ -43,14 +41,14 @@ public class LinkStateRoutingProtocol extends AbstractApplication
 
     private final IPLayer ip;
 
-    private LSPTimer LSPTimer;
+    private final LSPTimer LSPTimer;
 
-    private HelloTimer HelloTimer;
+    private final HelloTimer HelloTimer;
 
     // delay for hello packet send
-    private int HelloDelay;
+    private final int HelloDelay;
     // delay for LSP packet send
-    private int LSPDelay;
+    private final int LSPDelay;
 
     /**
      * Constructor

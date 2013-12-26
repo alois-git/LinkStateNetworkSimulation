@@ -15,8 +15,8 @@ public class Graph {
     private final List<Edge> edges;
 
     public Graph(Collection<FibonacciHeapNode> nodes, Collection<Edge> edges) {
-        this.nodes = new ArrayList<>(nodes);
-        this.edges = new ArrayList<>(edges);
+        this.nodes = new ArrayList<FibonacciHeapNode>(nodes);
+        this.edges = new ArrayList<Edge>(edges);
     }
 
     public List<FibonacciHeapNode> getNodes() {
